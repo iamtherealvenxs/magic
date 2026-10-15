@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ค้นหาการ์ดเมจิก</title>
+<style>
+:root{--bg:#f2f4f8;--fg:#1b1d24;--mut:#5f6675;--card:#fff;--line:#d6dbe5;--acc:#2f45c4;--accfg:#fff;color-scheme:light dark}
+@media(prefers-color-scheme:dark){:root{--bg:#14161c;--fg:#e8eaf0;--mut:#98a0b3;--card:#1e212a;--line:#2f3340;--acc:#8d9dff;--accfg:#10131f}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 "Noto Sans Thai",system-ui,sans-serif}
+main{max-width:1100px;margin:0 auto;padding:16px}
+h1{font-size:1.4rem;margin:0 0 12px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+input,select,button{font:inherit;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+#q{flex:1;min-width:0;width:100%}
+.sw{position:relative;flex:1;min-width:200px}
+#sug{position:absolute;left:0;right:0;top:100%;z-index:5;background:var(--card);border:1px solid var(--line);border-radius:8px;margin-top:2px;display:none;max-height:260px;overflow:auto}
+#sug div{padding:8px 10px;cursor:pointer}#sug div:hover{background:var(--bg)}
+button{cursor:pointer}
+button.go{background:var(--acc);color:var(--accfg);border-color:var(--acc);font-weight:600}
+.chip{padding:6px 12px;border-radius:99px}
+.chip.on{background:var(--acc);color:var(--accfg);border-color:var(--acc)}
+label.s{display:flex;gap:6px;align-items:center;color:var(--mut);font-size:.9rem}
+details summary{cursor:pointer;color:var(--mut);margin-top:10px}
+#note{margin:12px 0;color:var(--mut)}
+#note b{color:var(--fg)}
+#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.c{background:none;border:0;padding:0;text-align:left}
+.c img{width:100%;border-radius:5%;display:block;background:var(--line);aspect-ratio:488/680}
+.c span{display:block;font-size:.82rem;margin-top:4px;color:var(--mut)}
+.sg{margin:4px 6px 0 0}
+dialog{max-width:760px;width:94%;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--fg);padding:16px}
+dialog::backdrop{background:#0008}
+.d{display:flex;gap:16px;flex-wrap:wrap}.d img{width:260px;max-width:100%;border-radius:5%}.d>div{flex:1;min-width:220px}
+pre{white-space:pre-wrap;font:inherit;margin:6px 0}
+a{color:var(--acc)}
+</style>
+</head>
+<body>
+<main>
+<h1>ค้นหาการ์ดเมจิก (Magic: The Gathering)</h1>
+<div class="box">
+  <div class="row" style="margin-top:0">
+    <div class="sw"><input id="q" placeholder="พิมพ์ชื่อการ์ด เช่น lightning bolt (พิมพ์ผิดนิดหน่อยก็หาเจอ)" autocomplete="off"><div id="sug"></div></div>
+    <button class="go" id="go">ค้นหา</button>
+  </div>
+  <div class="row" id="cols"></div>
+  <div class="row">
+    <label class="s">สี <select id="cm"><option value=">=">มีสีเหล่านี้ (อาจมีสีอื่นด้วย)</option><option value="=">เฉพาะสีเหล่านี้พอดี</option><option value="<=">ไม่เกินสีเหล่านี้</option></select></label>
+    <label class="s"><input type="checkbox" id="or" checked> ค้นในข้อความของการ์ดด้วย</label>
+  </div>
+  <details open><summary>ตัวกรองเพิ่มเติม</summary>
+    <div class="row">
+      <select id="t"><option value="">ประเภททั้งหมด</option><option>creature</option><option>instant</option><option>sorcery</option><option>artifact</option><option>enchantment</option><option>land</option><option>planeswalker</option><option>battle</option></select>
+      <select id="r"><option value="">ความหายากทั้งหมด</option><option>common</option><option>uncommon</option><option>rare</option><option>mythic</option></select>
+      <select id="f"><option value="">ทุกฟอร์แมต</option><option>standard</option><option>pioneer</option><option>modern</option><option>legacy</option><option>vintage</option><option>commander</option><option>pauper</option></select>
+      <select id="mo"><option value="=">ค่ามานา =</option><option value="<=">ค่ามานา ≤</option><option value=">=">ค่ามานา ≥</option></select>
+      <input id="mv" type="number" min="0" placeholder="ค่ามานา" style="width:90px">
+      <input id="s" placeholder="รหัสชุด เช่น mh3" style="width:130px">
+    </div>
+    <div class="row">
+      <label class="s">เรียงตาม <select id="o"><option value="name">ชื่อ</option><option value="cmc">ค่ามานา</option><option value="released">วันที่ออก</option><option value="usd">ราคา</option><option value="edhrec">ความนิยม</option></select></label>
+      <label class="s">แสดง <select id="u"><option value="cards">การ์ดละ 1 ใบ</option><option value="prints">ทุกเวอร์ชัน</option></select></label>
+      <button id="clr">ล้างทั้งหมด</button>
+    </div>
+  </details>
+</div>
+<div id="note">หมายเหตุ: หน้านี้ที่โฮสต์บน Claude เชื่อมต่อ Scryfall ไม่ได้ ให้ดาวน์โหลดไฟล์ mtg-search.html ไปเปิดในเบราว์เซอร์หรืออัปโหลดขึ้นเว็บของคุณเองเพื่อให้ค้นหาได้</div>
+<div id="grid"></div>
+<div class="row"><button id="more" style="display:none">โหลดเพิ่ม</button></div>
+<dialog id="dlg"></dialog>
+<p style="color:var(--mut);font-size:.8rem;margin-top:24px">ข้อมูลจาก Scryfall API · พิมพ์ไวยากรณ์ Scryfall (เช่น <code>t:elf c:g</code>) ในช่องค้นหาได้โดยตรง</p>
+</main>
+<script>
+const $=s=>document.querySelector(s),enc=encodeURIComponent;
+const COLS=[['W','ขาว'],['U','น้ำเงิน'],['B','ดำ'],['R','แดง'],['G','เขียว'],['C','ไร้สี']];
+const sel=new Set();let next=null,timer;
+COLS.forEach(([k,n])=>{const b=document.createElement('button');b.className='chip';b.textContent=n;b.onclick=()=>{sel.has(k)?sel.delete(k):sel.add(k);b.classList.toggle('on')};$('#cols').append(b)});
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const note=h=>$('#note').innerHTML=h;
+async function api(p){const r=await fetch('https://api.scryfall.com'+p,{headers:{Accept:'application/json'}});const j=await r.json();if(!r.ok)throw j;return j}
+const raw=t=>/[:=<>()]|\b(or|and)\b/i.test(t);
+const words=t=>t.match(/"[^"]+"|\S+/g)||[];
+function filters(){
+  const f=[];
+  if(sel.size)f.push('c'+$('#cm').value+[...sel].join('').toLowerCase());
+  if($('#t').value)f.push('t:'+$('#t').value);
+  if($('#r').value)f.push('r:'+$('#r').value);
+  if($('#f').value)f.push('f:'+$('#f').value);
+  if($('#mv').value!=='')f.push('mv'+$('#mo').value+$('#mv').value);
+  if($('#s').value.trim())f.push('s:'+$('#s').value.trim());
+  return f;
+}
+function build(mode){
+  const t=$('#q').value.trim(),f=filters();let p=[];
+  if(t){
+    if(raw(t))p.push(t);
+    else{const w=words(t);
+      if(mode==='or')p.push('('+w.join(' or ')+')');
+      else if($('#or').checked)p.push('(('+w.join(' ')+') or ('+w.map(x=>'o:'+x).join(' ')+'))');
+      else p.push(w.join(' '));}
+  }
+  return p.concat(f).join(' ');
+}
+const params=()=>`&order=${$('#o').value}&unique=${$('#u').value}`;
+function show(list,append){
+  const g=$('#grid');if(!append)g.innerHTML='';
+  list.forEach(c=>{const f=c.card_faces&&!c.image_uris?c.card_faces[0]:c;const u=f.image_uris?.small||'';
+    const b=document.createElement('button');b.className='c';
+    b.innerHTML=`<img loading="lazy" alt="${esc(c.name)}" src="${u}"><span>${esc(c.name)}</span>`;
+    b.onclick=()=>detail(c);g.append(b)});
+}
+async function run(){
+  const q=build();
+  if(!q){note('พิมพ์ชื่อการ์ด หรือเลือกตัวกรองอย่างน้อยหนึ่งอย่าง');return}
+  note('กำลังค้นหา…');$('#grid').innerHTML='';$('#more').style.display='none';
+  try{const j=await api(`/cards/search?q=${enc(q)}${params()}`);done(j,`พบ <b>${j.total_cards}</b> รายการ`)}
+  catch(e){if(e.status===404)await fallback();else note(esc(e.details||'เกิดข้อผิดพลาดในการเชื่อมต่อ'))}
+}
+function done(j,msg,append){show(j.data,append);next=j.has_more?j.next_page:null;$('#more').style.display=next?'':'none';if(msg)note(msg)}
+async function fallback(){
+  const t=$('#q').value.trim(),f=filters();
+  if(t&&!raw(t)){
+    if(!f.length){try{const c=await api('/cards/named?fuzzy='+enc(t));done({data:[c]},`ไม่พบชื่อที่ตรงกันเป๊ะ แสดงชื่อใกล้เคียง: <b>${esc(c.name)}</b>`);return}catch(e){}}
+    try{const j=await api(`/cards/search?q=${enc(build('or'))}${params()}`);done(j,`ไม่พบการ์ดที่มีครบทุกคำ แสดงการ์ดที่มี <b>อย่างน้อยหนึ่งคำ</b> แทน (${j.total_cards} รายการ)`);return}catch(e){}
+    try{const a=await api('/cards/autocomplete?q='+enc(t));if(a.data.length){note('ไม่พบผลลัพธ์ ลองชื่อเหล่านี้: ');a.data.forEach(n=>{const b=document.createElement('button');b.className='chip sg';b.textContent=n;b.onclick=()=>{$('#q').value=n;run()};$('#note').append(b)});return}}catch(e){}
+  }
+  note('ไม่พบการ์ดที่ตรงเงื่อนไข'+(f.length?' — ตัวกรองอาจเข้มเกินไป ลองลดตัวกรอง (เช่น เปลี่ยนโหมดสีเป็น “มีสีเหล่านี้”) ':' — ลองตรวจตัวสะกดหรือใช้ชื่อภาษาอังกฤษ'));
+}
+$('#more').onclick=async()=>{if(!next)return;const j=await(await fetch(next)).json();done(j,null,true)};
+$('#go').onclick=run;
+$('#q').onkeydown=e=>{if(e.key==='Enter'){$('#sug').style.display='none';run()}};
+$('#q').oninput=()=>{clearTimeout(timer);const t=$('#q').value.trim(),s=$('#sug');
+  if(t.length<2||raw(t)){s.style.display='none';return}
+  timer=setTimeout(async()=>{try{const a=await api('/cards/autocomplete?q='+enc(t));
+    s.innerHTML='';a.data.slice(0,8).forEach(n=>{const d=document.createElement('div');d.textContent=n;d.onclick=()=>{$('#q').value=n;s.style.display='none';run()};s.append(d)});
+    s.style.display=a.data.length?'block':'none'}catch(e){}},250)};
+document.addEventListener('click',e=>{if(!e.target.closest('.sw'))$('#sug').style.display='none'});
+$('#clr').onclick=()=>{$('#q').value='';['t','r','f','mv','s'].forEach(i=>$('#'+i).value='');sel.clear();document.querySelectorAll('.chip.on').forEach(b=>b.classList.remove('on'));$('#grid').innerHTML='';note('');$('#more').style.display='none'};
+function detail(c){
+  const faces=c.card_faces||[c],f0=faces[0],img=(c.image_uris||f0.image_uris||{}).normal||'';
+  const txt=faces.map(f=>`<b>${esc(f.name)}</b> ${esc(f.mana_cost||'')}<br>${esc(f.type_line||'')}<pre>${esc(f.oracle_text||'')}</pre>${f.power?`<div>${esc(f.power)}/${esc(f.toughness)}</div>`:''}`).join('<hr>');
+  const lg=Object.entries(c.legalities||{}).filter(([,v])=>v==='legal').map(([k])=>k).join(', ')||'—';
+  const p=c.prices||{};
+  $('#dlg').innerHTML=`<div class="d"><img src="${img}" alt="${esc(c.name)}"><div>${txt}<p>ชุด: ${esc(c.set_name)} (${esc(c.set.toUpperCase())}) · ${esc(c.rarity)}</p><p>ราคา: ${p.usd?'$'+p.usd:'—'}</p><p>ลงแข่งได้ใน: ${esc(lg)}</p><p><a href="${esc(c.scryfall_uri)}" target="_blank" rel="noopener">เปิดใน Scryfall</a></p><button onclick="dlg.close()">ปิด</button></div></div>`;
+  $('#dlg').showModal();
+}
+$('#dlg').onclick=e=>{if(e.target.id==='dlg')e.target.close()};
+</script>
+</body>
+</html>
